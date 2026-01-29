@@ -38,29 +38,25 @@ Qwen3-TTS model requires authentication to download from HuggingFace. You need t
    - Click "Generate token"
    - **Important:** Copy the token immediately - you won't see it again!
 
-3. **Configure the token**
+3. **Login with your token**
 
-   **Option A: Environment Variable (Recommended)**
+   The token is stored in your user configuration and persists across sessions. You only need to login once.
+
    ```bash
-   # Add to your ~/.zshrc or ~/.bash_profile
-   export HF_TOKEN="hf_YourTokenHere"
-   
-   # Reload your shell
-   source ~/.zshrc
-   ```
-
-   **Option B: In Python script**
-   ```python
-   # Create a file: config.py
-   HF_TOKEN = "hf_YourTokenHere"
-   ```
-   ⚠️ **Never commit this file to Git!** (see .gitignore section below)
-
-   **Option C: Login via CLI**
-   ```bash
+   # Install HuggingFace CLI (if not already installed)
    pip install huggingface_hub
+   
+   # Login with your token
    huggingface-cli login
-   # Paste your token when prompted
+   # Paste your token when prompted (e.g., hf_YourTokenHere)
+   ```
+
+   This saves the token to `~/.cache/huggingface/token` and you won't need to provide it again.
+
+   **Alternative: Login in Python script**
+   ```python
+   from huggingface_hub import login
+   login(token="hf_YourTokenHere")  # Only needed once
    ```
 
 4. **Accept model license**
@@ -72,13 +68,14 @@ Qwen3-TTS model requires authentication to download from HuggingFace. You need t
 ### Installation Method 1: Using venv (Recommended)
 
 ```bash
-# 1. Install system dependencies
+# 1. Install system dependencies first
 brew install portaudio ffmpeg sox
 
-# 2. Create project directory
-mkdir qwen3-tts-app && cd qwen3-tts-app
+# 2. Clone this repository
+git clone https://github.com/gemuzkm/Qwen3-TTS-apple-silicon.git
+cd Qwen3-TTS-apple-silicon
 
-# 3. Create virtual environment
+# 3. Create virtual environment in the repository directory
 python3 -m venv venv
 source venv/bin/activate
 
@@ -99,33 +96,38 @@ pip install \
   onnxruntime \
   numpy
 
-# 6. Clone or download app_mac_m4.py
-# (Place your app_mac_m4.py file here)
+# 6. Login to HuggingFace (one-time setup)
+huggingface-cli login
+# Paste your token when prompted
 
-# 7. Set your HuggingFace token
-export HF_TOKEN="hf_YourTokenHere"
-
-# 8. Run the application
+# 7. Run the application
 python app_mac_m4.py
 ```
 
 ### Installation Method 2: Using Conda
 
 ```bash
-# 1. Install system dependencies
+# 1. Install system dependencies first
 brew install portaudio ffmpeg sox
 
-# 2. Create conda environment
+# 2. Clone this repository
+git clone https://github.com/gemuzkm/Qwen3-TTS-apple-silicon.git
+cd Qwen3-TTS-apple-silicon
+
+# 3. Create conda environment
 conda create -n qwen3-tts python=3.12 -y
 conda activate qwen3-tts
 
-# 3. Install all packages via pip (even with conda)
+# 4. Install all packages via pip (even with conda)
 pip install --upgrade pip
 pip install torch torchvision torchaudio
 pip install qwen-tts gradio transformers==4.57.3 accelerate==1.12.0
 
-# 4. Set HuggingFace token and run
-export HF_TOKEN="hf_YourTokenHere"
+# 5. Login to HuggingFace (one-time setup)
+huggingface-cli login
+# Paste your token when prompted
+
+# 6. Run the application
 python app_mac_m4.py
 ```
 
@@ -184,7 +186,6 @@ model = Qwen3TTSModel.from_pretrained(
     torch_dtype=TORCH_DTYPE,
     attn_implementation="sdpa",
     device_map=DEVICE,
-    token=HF_TOKEN,
 )
 ```
 
@@ -194,65 +195,16 @@ export QWEN_DTYPE="float32"
 python app_mac_m4.py
 ```
 
-## 📁 Project Structure & .gitignore
+## 📁 Project Structure
 
-### Recommended .gitignore
+After cloning and setup, your directory will look like:
 
-Create a `.gitignore` file in your project root to exclude unnecessary files:
-
-```gitignore
-# Python virtual environments
-venv/
-env/
-ENV/
-.venv/
-
-# Conda environments
-conda-meta/
-
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-
-# Model cache and downloads
-models/
-*.bin
-*.safetensors
-checkpoints/
-
-# HuggingFace cache
-.cache/
-transformers_cache/
-
-# Sensitive information
-config.py
-.env
-*.key
-*.token
-
-# Generated audio files
-output/
-*.wav
-*.mp3
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Logs
-*.log
-logs/
-
-# Temporary files
-temp/
-tmp/
+```
+Qwen3-TTS-apple-silicon/
+├── app_mac_m4.py           # Main application file
+├── README.md               # This file
+├── .gitignore             # Git ignore rules
+└── venv/                  # Virtual environment (not tracked in git)
 ```
 
 ## 🔧 Troubleshooting
@@ -276,19 +228,22 @@ pip install torch torchvision torchaudio
 **Symptoms:**
 - `401 Unauthorized` error
 - "Repository not found" error
+- "Access to model denied" error
 
 **Solution:**
 ```bash
-# Verify token is set:
-echo $HF_TOKEN
+# Check if you're logged in:
+huggingface-cli whoami
 
-# Login via CLI:
+# If not logged in or token expired, login again:
 huggingface-cli login
+# Paste your token when prompted
 
-# Or set in script:
-from huggingface_hub import login
-login(token="hf_YourTokenHere")
+# Verify token is saved:
+ls -la ~/.cache/huggingface/token
 ```
+
+**Note**: You don't need to use `export HF_TOKEN` because `huggingface-cli login` stores the token in your user configuration permanently.
 
 #### 3. "UserWarning: Trying to convert audio automatically"
 
@@ -305,7 +260,7 @@ warnings.filterwarnings('ignore', category=UserWarning, message='.*audio automat
 The model is approximately 4GB. For faster downloads in some regions:
 
 ```bash
-# Use HuggingFace mirror (if available)
+# Use HuggingFace mirror (if available in your region)
 export HF_ENDPOINT=https://hf-mirror.com
 python app_mac_m4.py
 ```
@@ -321,6 +276,13 @@ demo.launch(
     share=False
 )
 ```
+
+#### 6. "Repository not found or access denied"
+
+**Solution:**
+1. Make sure you accepted the model license at [Qwen3-TTS page](https://huggingface.co/Qwen/Qwen3-TTS)
+2. Verify you're logged in: `huggingface-cli whoami`
+3. Re-login if needed: `huggingface-cli login`
 
 ## 🧪 Testing Your Setup
 
@@ -338,17 +300,27 @@ print("BFloat16 support:", x.dtype)  # Should print: torch.bfloat16
 print("✅ BFloat16 is working!")
 ```
 
+### Verify HuggingFace authentication:
+
+```bash
+# Check login status
+huggingface-cli whoami
+
+# Should display your username if logged in
+# If not, run: huggingface-cli login
+```
+
 ### Model loading test:
 
 ```python
 from qwen_tts import Qwen3TTSModel
 import torch
 
+# Token not needed here - already logged in via CLI
 model = Qwen3TTSModel.from_pretrained(
     "Qwen/Qwen3-TTS",
     torch_dtype=torch.bfloat16,
-    device_map="mps",
-    token="hf_YourTokenHere"
+    device_map="mps"
 )
 print("✅ Model loaded successfully!")
 ```
@@ -369,6 +341,9 @@ print("✅ Model loaded successfully!")
 
 ## ❓ FAQ
 
+**Q: Do I need to set HF_TOKEN environment variable?**  
+A: No! Using `huggingface-cli login` stores the token in your user configuration (`~/.cache/huggingface/token`) permanently. You don't need to export or set any environment variables.
+
 **Q: Why use bfloat16 instead of float32?**  
 A: Apple Silicon has hardware-accelerated bfloat16 support, resulting in 10-15% faster inference and reduced memory usage while maintaining excellent audio quality.
 
@@ -381,11 +356,14 @@ A: Yes, these are system-level audio processing libraries required by Python aud
 **Q: Can this run on Intel Macs?**  
 A: Yes, but the device will be CPU instead of MPS, resulting in significantly slower performance (5-10x slower).
 
-**Q: Is my HuggingFace token secure?**  
-A: Never commit tokens to Git! Use environment variables or the HuggingFace CLI login. Add config files with tokens to .gitignore.
+**Q: Where is my HuggingFace token stored?**  
+A: After running `huggingface-cli login`, the token is securely stored in `~/.cache/huggingface/token` and used automatically by all HuggingFace libraries.
 
 **Q: How large is the model download?**  
 A: Approximately 4GB for the base Qwen3-TTS model.
+
+**Q: Can I use this repository for other projects?**  
+A: Yes! After cloning, the `venv/` directory is excluded from git (see .gitignore), so each clone can have its own independent environment.
 
 ## 📚 Additional Resources
 
@@ -393,6 +371,7 @@ A: Approximately 4GB for the base Qwen3-TTS model.
 - **HuggingFace Space**: [Qwen/Qwen3-TTS](https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 - **Alternative Implementation**: [esendjer/Q3-TTS](https://github.com/esendjer/Q3-TTS)
 - **PyTorch MPS Documentation**: [PyTorch MPS Backend](https://pytorch.org/docs/stable/notes/mps.html)
+- **HuggingFace CLI Documentation**: [HuggingFace Hub CLI](https://huggingface.co/docs/huggingface_hub/guides/cli)
 
 ## 🤝 Contributing
 
